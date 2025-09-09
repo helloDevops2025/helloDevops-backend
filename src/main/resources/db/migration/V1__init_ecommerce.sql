@@ -1,0 +1,127 @@
+-- V1__init_ecommerce.sql
+
+-- ตารางหลัก
+CREATE TABLE IF NOT EXISTS users (
+                                     user_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                     name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone_number VARCHAR(50),
+    address TEXT,
+    user_type ENUM('customer','admin') NOT NULL DEFAULT 'customer',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS authen (
+                                      auth_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                      user_id BIGINT UNSIGNED NOT NULL,
+                                      email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_auth_email (email),
+    CONSTRAINT fk_auth_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS categories (
+                                          category_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                          category_name VARCHAR(150) NOT NULL,
+    category_image VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_category_name (category_name)
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS products (
+                                        product_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                        category_id BIGINT UNSIGNED,
+                                        product_name VARCHAR(200) NOT NULL,
+    description TEXT,
+    price DECIMAL(12,2) NOT NULL CHECK (price >= 0),
+    product_image VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_products_category_id (category_id),
+    KEY idx_products_name (product_name),
+    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(category_id)
+                                                            ON DELETE SET NULL ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS carts (
+                                     cart_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                     user_id BIGINT UNSIGNED NOT NULL,
+                                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                     UNIQUE KEY uk_cart_user (user_id),
+    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS cart_items (
+                                          cart_item_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                          cart_id BIGINT UNSIGNED NOT NULL,
+                                          product_id BIGINT UNSIGNED NOT NULL,
+                                          quantity INT UNSIGNED NOT NULL CHECK (quantity > 0),
+    price_each DECIMAL(12,2) NOT NULL CHECK (price_each >= 0),
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_cart_product (cart_id, product_id),
+    KEY idx_cart_items_product_id (product_id),
+    CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS orders (
+                                      order_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                      user_id BIGINT UNSIGNED NOT NULL,
+                                      status ENUM('pending','paid','processing','shipped','completed','cancelled') NOT NULL DEFAULT 'pending',
+    shipping_address TEXT NOT NULL,
+    placed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (discount_amount >= 0),
+    total_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_orders_user (user_id),
+    KEY idx_orders_status (status),
+    CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+                                                            ON DELETE RESTRICT ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS order_items (
+                                           order_item_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                                           order_id BIGINT UNSIGNED NOT NULL,
+                                           product_id BIGINT UNSIGNED NOT NULL,
+                                           product_name VARCHAR(200) NOT NULL,
+    quantity INT UNSIGNED NOT NULL CHECK (quantity > 0),
+    price_each DECIMAL(12,2) NOT NULL CHECK (price_each >= 0),
+    line_total DECIMAL(12,2) GENERATED ALWAYS AS (quantity * price_each) STORED,
+    KEY idx_order_items_order (order_id),
+    KEY idx_order_items_product (product_id),
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(order_id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+    ) ENGINE=InnoDB;
+
+CREATE OR REPLACE VIEW v_order_totals AS
+SELECT o.order_id, SUM(oi.line_total) AS subtotal, o.discount_amount,
+       (SUM(oi.line_total) - o.discount_amount) AS grand_total
+FROM orders o
+         JOIN order_items oi ON oi.order_id = o.order_id
+GROUP BY o.order_id, o.discount_amount;
+
+DELIMITER $$
+CREATE TRIGGER trg_orders_update_total
+    AFTER INSERT ON order_items
+    FOR EACH ROW
+BEGIN
+    UPDATE orders o
+        JOIN (
+        SELECT order_id, SUM(line_total) AS subtotal
+        FROM order_items
+        WHERE order_id = NEW.order_id
+        GROUP BY order_id
+        ) x ON x.order_id = o.order_id
+        SET o.total_amount = GREATEST(x.subtotal - o.discount_amount, 0);
+    END$$
+    DELIMITER ;
