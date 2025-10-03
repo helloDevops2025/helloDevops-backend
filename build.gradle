@@ -32,7 +32,7 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.5'
-    id 'io.spring.dependency-management' version '1.1.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.example'
@@ -40,7 +40,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)  // หรือ 17 ให้ตรงกับ Dockerfile
+        languageVersion = JavaLanguageVersion.of(21) // ถ้า Docker ใช้ 17 ให้เปลี่ยนเป็น 17
     }
 }
 
@@ -49,22 +49,21 @@ repositories {
 }
 
 dependencies {
-    // Web (สำหรับ @RestController, @GetMapping, Spring MVC)
+    // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    // JPA (ใช้ Entity/Repository)
+    // Security (ให้คลาส HttpSecurity, SecurityFilterChain, EnableWebSecurity)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // ถ้าจะใช้ BCrypt ตรง ๆ ใน service
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // JPA/Hibernate
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // JDBC (สำหรับ JdbcTemplate)
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-
-    // Flyway migration
-    implementation 'org.flywaydb:flyway-mysql'
-
-    // MySQL driver
+    // MySQL driver (ถ้าใช้ MySQL)
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Test (JUnit, MockMvc, Spring Test)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

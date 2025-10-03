@@ -1,5 +1,6 @@
 package com.example.backend;
 
+import org.springframework.http.ResponseEntity;        // ✅ เพิ่ม import นี้
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,7 +40,11 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {   // ✅ ใช้ ResponseEntity<Void>
+        if (!store.containsKey(id)) {
+            return ResponseEntity.notFound().build();                  // 404
+        }
         store.remove(id);
+        return ResponseEntity.noContent().build();                     // 204
     }
 }
