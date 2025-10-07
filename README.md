@@ -216,6 +216,8 @@ Started BackendApplication in 10.5 seconds
 | ทดสอบเข้า DB       | `docker exec -it mysql mysql -uroot -p1234` | เข้าดูตารางได้    |
 | Build backend ใหม่ | `docker compose build --no-cache backend`   | สร้าง image ใหม่  |
 | รัน backend        | `docker compose up -d backend`              | ระบบพร้อมใช้งาน   |
+| Build frontend ใหม่ | `docker compose build --no-cache frontend`   | สร้าง image ใหม่  |
+| รัน frontend        | `docker compose up -d frontend`              | ระบบพร้อมใช้งาน   |
 
 ---
 
