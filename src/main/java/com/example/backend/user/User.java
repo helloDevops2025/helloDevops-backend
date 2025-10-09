@@ -1,74 +1,51 @@
-// package com.example.backend;
-
-// public class User {
-//     private Long id;
-//     private String name;
-//     private String email;
-
-//     public User() {}
-
-//     public User(Long id, String name, String email) {
-//         this.id = id;
-//         this.name = name;
-//         this.email = email;
-//     }
-
-//     public Long getId() { return id; }
-//     public void setId(Long id) { this.id = id; }
-
-//     public String getName() { return name; }
-//     public void setName(String name) { this.name = name; }
-
-//     public String getEmail() { return email; }
-//     public void setEmail(String email) { this.email = email; }
-// }
-
 package com.example.backend.user;
 
+import jakarta.persistence.*;
 import java.time.Instant;
 
+@Entity
+@Table(name = "users")
 public class User {
-    private Long id;
-    private String name;
-    private String email;         // unique, lowercase
-    private String passwordHash;  // เก็บ hash ของ password
-    private Role role;            // USER / ADMIN
-    private boolean active = true;
-    private Instant createdAt = Instant.now();
-    private Instant updatedAt = Instant.now();
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    public User() {}
+  @Column(nullable = false, unique = true)
+  private String email;
 
-    public User(Long id, String name, String email, String passwordHash, Role role) {
-        this.id = id;
-        this.name = name;
-        this.email = email == null ? null : email.toLowerCase();
-        this.passwordHash = passwordHash;
-        this.role = role;
-    }
+  private String phone;
 
-    // ===== Getters/Setters =====
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+  @Column(name = "password_hash", nullable = false)
+  private String passwordHash;
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+  @Enumerated(EnumType.STRING)
+  private Role role = Role.USER;
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email == null ? null : email.toLowerCase(); }
+  private boolean active = true;
 
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+  @Column(name = "created_at")
+  private Instant createdAt = Instant.now();
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+  // ── getters/setters ─────────────────────
+  public Long getId() { return id; }
+  public void setId(Long id) { this.id = id; }
 
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+  public String getEmail() { return email; }
+  public void setEmail(String email) {
+    this.email = (email == null) ? null : email.toLowerCase();
+  }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+  public String getPhone() { return phone; }
+  public void setPhone(String phone) { this.phone = phone; }
 
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+  public String getPasswordHash() { return passwordHash; }
+  public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
+  public Role getRole() { return role; }
+  public void setRole(Role role) { this.role = role; }
+
+  public boolean isActive() { return active; }
+  public void setActive(boolean active) { this.active = active; }
+
+  public Instant getCreatedAt() { return createdAt; }
+  public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
