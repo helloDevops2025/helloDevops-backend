@@ -1,0 +1,56 @@
+name: Build and Run Backend 
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ ดึงโค้ดจาก GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ ตั้งค่า Java  (Use Gradle)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # 3️⃣ Build ด้วย Gradle
+      - name: Build with Gradle
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean build -x test
+
+      # 4️⃣ Build Docker image จาก Dockerfile โดยตรง
+      - name: Build Docker image
+        run: |
+          docker build -t hello-devops-backend:latest .
+
+      # 5️⃣ ทดสอบรัน container (optional)
+      - name: Run container for test
+        run: |
+          docker run -d --name backend-test -p 8080:8080 hello-devops-backend:latest
+          sleep 5
+          docker ps
+          docker logs backend-test || true
+
+      # 6️⃣ Clean up
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker stop backend-test || true
+          docker rm backend-test || true
+
+            # (Optional) Push image ไป Docker Hub
+      # - name: Push image to Docker Hub
+      #   if: success()
+      #   run: |
+      #     echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+      #     docker tag hello-devops-frontend:latest ${{ secrets.DOCKER_HUB_USERNAME }}/hello-devops-frontend:latest
+      #     docker push ${{ secrets.DOCKER_HUB_USERNAME }}/hello-devops-frontend:latest
