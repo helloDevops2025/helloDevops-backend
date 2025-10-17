@@ -247,3 +247,11 @@ Started BackendApplication in 10.5 seconds
 * สามารถเรียก API เช่น `http://localhost:8080/api/products` ได้ทันที 🚀
 
 ```
+# Pull branch
+cd helloDevops
+git fetch --all --prune
+git checkout pair
+git merge origin/ploy -m "merge: update from ploy → pair"
+git push origin pair
+```
+

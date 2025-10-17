@@ -333,4 +333,39 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+
+
+    // ========== ดึงรูป cover (สำหรับฝั่ง User) ==========
+    @GetMapping("/{id}/cover")
+    public ResponseEntity<?> getCurrentCover(@PathVariable Long id) {
+        // หา cover image ล่าสุด
+        var coverOpt = imageRepo.findFirstByProductIdFkAndIsCoverTrueOrderBySortOrderAscIdAsc(id);
+        if (coverOpt.isEmpty()) {
+            // ถ้าไม่มี → คืน placeholder หรือ 404
+            return ResponseEntity.notFound().build();
+        }
+
+        var img = coverOpt.get();
+
+        // ถ้าเป็นรูปใน DB (BLOB)
+        if (img.getContent() != null && img.getContent().length > 0) {
+            return ResponseEntity.ok()
+                    .header("Content-Type", img.getContentType() != null ? img.getContentType() : "image/jpeg")
+                    .header("Cache-Control", "public, max-age=86400")
+                    .body(img.getContent());
+        }
+
+        // ถ้าเป็นรูปที่เก็บเป็น URL (บนเครื่องหรือ S3)
+        if (img.getImageUrl() != null) {
+            // redirect ไปที่ไฟล์จริง
+            return ResponseEntity.status(302)
+                    .header("Location", img.getImageUrl())
+                    .build();
+        }
+
+        // ถ้าไม่มีทั้งคู่
+        return ResponseEntity.notFound().build();
+    }
+
+
 }
