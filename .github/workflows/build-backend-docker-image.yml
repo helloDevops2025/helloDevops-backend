@@ -5,11 +5,9 @@ on:
   push:
     branches:
       - master
-      - main
   pull_request:
     branches:
       - master
-      - main
 
   # ✅ 2. รันด้วยตนเองได้
   workflow_dispatch:
