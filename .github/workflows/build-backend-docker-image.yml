@@ -68,3 +68,13 @@ jobs:
       #     echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
       #     docker tag hello-devops-backend:latest ${DOCKER_USERNAME}/hello-devops-backend:latest
       #     docker push ${DOCKER_USERNAME}/hello-devops-backend:latest
+      - name: Login to Docker Hub
+        run: |
+          echo "dckr_pat_abcd1234xyz" | docker login -u "$u6687032" --password-stdin
+
+      # 🧱 Build and push backend
+      - name: Build and push backend image
+        run: |
+          docker build -t hello-devops-backend:latest .
+          docker tag hello-devops-backend:latest u6687032/hellodevops-backend:latest
+          docker push u6687032/hellodevops-backend:latest
