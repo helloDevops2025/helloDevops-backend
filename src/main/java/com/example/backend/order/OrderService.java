@@ -21,7 +21,6 @@ public class OrderService {
         this.orderItemRepo = orderItemRepo;
     }
 
-    // ✅ สร้างออเดอร์ใหม่
     @Transactional
     public Order createOrder(Order order) {
         Order savedOrder = orderRepo.save(order);
@@ -34,10 +33,12 @@ public class OrderService {
                 if (item.getProductIdFk() != null) {
                     productRepo.findById(item.getProductIdFk()).ifPresent(prod -> {
                         item.setProduct(prod);
+
                         // ✅ ดึงชื่อแบรนด์จาก brandRepo ผ่าน brandId
                         if (prod.getBrandId() != null) {
-                            brandRepo.findById(prod.getBrandId())
-                                    .ifPresent(brand -> item.setBrandName(brand.getName()));
+                            brandRepo.findById(prod.getBrandId()).ifPresent(brand -> {
+                                item.setBrandName(brand.getName());
+                            });
                         }
                     });
                 }
@@ -52,23 +53,26 @@ public class OrderService {
         return orderRepo.save(savedOrder);
     }
 
+
     // ✅ อัปเดต order
     public Order updateOrder(Order order) {
         return orderRepo.save(order);
     }
 
-    // ✅ ดึงทั้งหมด
     public List<Order> listAll() {
         return orderRepo.findAll();
     }
 
-    // ✅ ดึงตาม id
     public Optional<Order> getById(Long id) {
         return orderRepo.findById(id);
     }
 
-    // ✅ ดึงตาม code
     public Optional<Order> getByCode(String code) {
         return orderRepo.findByOrderCode(code);
     }
+
+    public void deleteOrder(Long id) {
+        orderRepo.deleteById(id);
+    }
+
 }

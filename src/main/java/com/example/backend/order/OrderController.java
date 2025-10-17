@@ -5,9 +5,7 @@ import com.example.backend.order.dto.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,10 +22,8 @@ public class OrderController {
 
     // ✅ GET: All orders
     @GetMapping
-    public List<OrderResponse> listOrders() {
-        return orderService.listAll().stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+    public List<Order> listOrders() {
+        return orderService.listAll();
     }
 
     // ✅ GET: Order by ID (with DTO)
@@ -35,39 +31,7 @@ public class OrderController {
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         Order order = orderService.getById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        return ResponseEntity.ok(convertToResponse(order));
-    }
 
-    // ✅ POST: Create order
-    @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(@RequestBody Order order) {
-        Order created = orderService.createOrder(order);
-        return ResponseEntity.ok(convertToResponse(created));
-    }
-
-    // ✅ PUT: Update order status
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return orderService.getById(id).map(order -> {
-            String status = body.get("status");
-            order.setOrderStatus(status);
-
-            // ✅ ตั้งเวลาอัตโนมัติตามสถานะ
-            switch (status.toUpperCase()) {
-                case "PREPARING" -> order.setPreparingAt(LocalDateTime.now());
-                case "READY_TO_SHIP" -> order.setReadyAt(LocalDateTime.now());
-                case "SHIPPING" -> order.setShippingAt(LocalDateTime.now());
-                case "DELIVERED" -> order.setDeliveredAt(LocalDateTime.now());
-                case "CANCELLED" -> order.setCancelledAt(LocalDateTime.now());
-            }
-
-            orderService.updateOrder(order);
-            return ResponseEntity.ok(convertToResponse(order));
-        }).orElse(ResponseEntity.notFound().build());
-    }
-
-    // ✅ Helper method: แปลง Order → OrderResponse
-    private OrderResponse convertToResponse(Order order) {
         List<OrderItemResponse> items = order.getOrderItems().stream()
                 .map(item -> new OrderItemResponse(
                         item.getProductName(),
@@ -82,24 +46,46 @@ public class OrderController {
                 .map(OrderItemResponse::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new OrderResponse(
+        OrderResponse response = new OrderResponse(
                 order.getId(),
-                order.getOrderCode(),
                 order.getCustomerName(),
-                order.getCustomerPhone(),
-                order.getShippingAddress(),
-                order.getPaymentMethod(),
                 order.getShippingMethod(),
-                order.getOrderStatus(),
                 total,
-                order.getCreatedAt(),
-                order.getUpdatedAt(),
-                order.getPreparingAt(),
-                order.getReadyAt(),
-                order.getShippingAt(),
-                order.getDeliveredAt(),
-                order.getCancelledAt(),
                 items
         );
+
+        return ResponseEntity.ok(response);
     }
+
+    // ✅ POST: Create order
+    @PostMapping
+    public ResponseEntity<Order> createOrder(@RequestBody Order order) {
+        Order created = orderService.createOrder(order);
+        return ResponseEntity.ok(created);
+    }
+
+    // ✅ PUT: Update order status
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return orderService.getById(id).map(order -> {
+            String status = body.get("status");
+            order.setOrderStatus(status);
+            orderService.updateOrder(order);
+            return ResponseEntity.ok(order);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+    // ✅ DELETE: Delete order by ID
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteOrder(@PathVariable Long id) {
+        return orderService.getById(id).map(order -> {
+            orderService.deleteOrder(id);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Order deleted successfully",
+                    "orderId", id
+            ));
+        }).orElse(ResponseEntity.status(404).body(Map.of(
+                "error", "Order not found"
+        )));
+    }
+
 }
