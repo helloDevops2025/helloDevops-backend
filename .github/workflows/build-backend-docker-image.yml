@@ -59,12 +59,12 @@ jobs:
 
       # 7️⃣ (Optional) Push image ไป Docker Hub
       # ใช้ secrets ที่เก็บไว้ใน repo settings → Secrets → Actions
-      - name: Push image to Docker Hub
-        if: success()
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-        run: |
-          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-          docker tag hello-devops-backend:latest ${DOCKER_USERNAME}/hello-devops-backend:latest
-          docker push ${DOCKER_USERNAME}/hello-devops-backend:latest
+      # - name: Push image to Docker Hub
+      #   if: success()
+      #   env:
+      #     DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      #     DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      #   run: |
+      #     echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+      #     docker tag hello-devops-backend:latest ${DOCKER_USERNAME}/hello-devops-backend:latest
+      #     docker push ${DOCKER_USERNAME}/hello-devops-backend:latest
