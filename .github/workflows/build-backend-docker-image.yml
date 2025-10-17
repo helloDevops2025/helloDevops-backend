@@ -1,8 +1,17 @@
-name: Build and Run Backend 
+name: Build and Run Backend
 
 on:
+  # ✅ 1. ให้รันอัตโนมัติเมื่อ push และ pull request เข้า branch หลัก
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+  # ✅ 2. รันด้วยตนเองได้
   workflow_dispatch:
 
 jobs:
@@ -14,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ ตั้งค่า Java  (Use Gradle)
+      # 2️⃣ ตั้งค่า Java (ใช้ JDK 21)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -36,7 +45,8 @@ jobs:
       - name: Run container for test
         run: |
           docker run -d --name backend-test -p 8080:8080 hello-devops-backend:latest
-          sleep 5
+          echo "⏳ Waiting for app to start..."
+          sleep 10
           docker ps
           docker logs backend-test || true
 
@@ -47,10 +57,14 @@ jobs:
           docker stop backend-test || true
           docker rm backend-test || true
 
-            # (Optional) Push image ไป Docker Hub
-      # - name: Push image to Docker Hub
-      #   if: success()
-      #   run: |
-      #     echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-      #     docker tag hello-devops-frontend:latest ${{ secrets.DOCKER_HUB_USERNAME }}/hello-devops-frontend:latest
-      #     docker push ${{ secrets.DOCKER_HUB_USERNAME }}/hello-devops-frontend:latest
+      # 7️⃣ (Optional) Push image ไป Docker Hub
+      # ใช้ secrets ที่เก็บไว้ใน repo settings → Secrets → Actions
+      - name: Push image to Docker Hub
+        if: success()
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+        run: |
+          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker tag hello-devops-backend:latest ${DOCKER_USERNAME}/hello-devops-backend:latest
+          docker push ${DOCKER_USERNAME}/hello-devops-backend:latest
