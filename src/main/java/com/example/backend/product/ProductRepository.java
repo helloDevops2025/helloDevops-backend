@@ -9,10 +9,11 @@
 // }
 package com.example.backend.product;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
   Optional<Product> findByProductId(String productId);
@@ -25,8 +26,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
       p.price              AS price,
       p.quantity           AS quantity,
       p.in_stock           AS inStock,
-      COALESCE(c.name,'-') AS category,
-      COALESCE(b.name,'-') AS brand,
+      COALESCE(c.name,'') AS category,
+      COALESCE(b.name,'') AS brand,
       (
         SELECT pi.image_url
         FROM product_images pi
