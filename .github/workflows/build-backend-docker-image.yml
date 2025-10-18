@@ -48,6 +48,30 @@ jobs:
           docker ps
           docker logs backend-test || true
 
+      # ✅ 5.1 เก็บ log ของ container เป็น report
+      - name: Save backend logs
+        if: always()
+        run: |
+          mkdir -p reports
+          docker logs backend-test > reports/backend_log.txt || true
+          echo "📦 Saved logs to reports/backend_log.txt"
+      
+      # ✅ 5.2 เก็บผลการ build/test จาก Gradle (ถ้ามี)
+      - name: Collect Gradle reports
+        if: always()
+        run: |
+          mkdir -p reports
+          cp -r build/reports/* reports/ || true
+          cp -r build/test-results/* reports/ || true
+      
+      # ✅ 5.3 อัปโหลดไฟล์รายงานขึ้น GitHub Actions Artifacts
+      - name: Upload build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: reports/
+    
       # 6️⃣ Clean up
       - name: Clean up containers
         if: always()
