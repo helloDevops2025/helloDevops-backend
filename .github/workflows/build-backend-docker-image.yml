@@ -57,7 +57,7 @@ jobs:
 
       - name: Login to Docker Hub
         run: |
-          echo dckr_pat_VJu4lYTGkJU9meYspQ3U2XkUjW4 | docker login -u u6687032 --password-stdin
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u u6687032 --password-stdin
 
       # 🧱 Build and push backend
       - name: Build and push backend image
@@ -66,3 +66,20 @@ jobs:
           docker build -t hello-devops-backend:latest .
           docker tag hello-devops-backend:latest u6687032/hellodevops-backend:latest
           docker push u6687032/hellodevops-backend:latest
+
+           #  (CD) Deploy เข้า Kubernetes cluster
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=$PWD/kubeconfig.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "🚀 Deploying to K8s..."
+          kubectl set image deployment/backend-deploy backend=u6687032/hellodevops-backend:latest --namespace=prod
+          kubectl rollout status deployment/backend-deploy --namespace=prod
