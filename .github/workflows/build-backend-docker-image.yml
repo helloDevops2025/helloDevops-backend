@@ -34,27 +34,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean build -x test
 
-      # 🧪 รัน test พร้อมเก็บรายงาน (JUnit XML + Jacoco coverage)
-      - name: Run Gradle tests and generate reports
-        run: |
-          ./gradlew test jacocoTestReport
-        continue-on-error: true
-      
-      # 📦 อัปโหลดผล test XML ไว้เป็น Artifact (ดาวน์โหลดได้)
-      - name: Upload test result XML
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-test-results
-          path: build/test-results/test/
-      
-      # 🧭 แสดงผล Test Summary บนหน้า GitHub Actions Run
-      - name: Publish Test Summary
-        if: always()
-        uses: test-summary/action@v2
-        with:
-          paths: "build/test-results/**/*.xml"
-
       # 4️⃣ Build Docker image จาก Dockerfile โดยตรง
       - name: Build Docker image
         run: |
