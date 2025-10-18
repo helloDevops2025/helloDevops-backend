@@ -367,7 +367,7 @@ git push origin fluke-backend
 
 ---
 
-## ✅ สรุปสำหรับเพื่อนแต่ละคน
+## สรุปสำหรับเพื่อนแต่ละคน
 
 | ชื่อเพื่อน | คำสั่งที่ใช้                                                             |
 | ---------- | ------------------------------------------------------------------------ |
@@ -398,3 +398,92 @@ git push origin fluke-backend
 
 ---
 
+## ✅ ขั้นตอนการ Push โค้ด Backend แบบมีการแก้ไขไฟล์
+
+### 1. ตรวจสอบว่าอยู่ใน branch ที่ต้องการ
+```bash
+git branch
+```
+- ต้องอยู่ใน branch เช่น `ploy-backend`  
+- ถ้ายังไม่อยู่ → ใช้ `git checkout ploy-backend`
+
+---
+
+### 2. ตรวจสอบสถานะไฟล์ที่แก้
+```bash
+git status
+```
+- ดูว่าไฟล์ไหนถูกแก้ และยังไม่ได้ `add` หรือ `commit`
+
+---
+
+### 3. เพิ่มไฟล์ที่แก้เข้าสู่ staging
+```bash
+# 3 ตัวเลือก
+git add .  
+git add -A 
+git add <ตามด้วยชื่อไฟล์>
+```
+- หรือถ้าอยากเลือกเฉพาะไฟล์ → `git add path/to/file`
+
+---
+
+### 4. Commit พร้อมข้อความสรุปงาน
+```bash
+git commit -m "Finish Phase X: [สรุปสิ่งที่แก้ไข]"
+```
+- เช่น: `Finish Phase 1: backend-fix ProductRepository.java`
+
+---
+
+### 5. ดึงการเปลี่ยนแปลงจาก remote ก่อน push
+```bash
+git pull
+```
+- ป้องกัน error `rejected (fetch first)`  
+- ถ้าอยากให้ merge แบบเรียบง่าย → ใช้ `git pull --rebase`
+
+---
+
+### 6. Push ขึ้น remote
+```bash
+git push origin ploy-backend
+```
+- ถ้าไม่มี error แสดงว่า push สำเร็จ
+
+---
+```bash
+git branch
+git status
+
+# 3 ตัวเลือก
+git add .  
+git add -A 
+git add <ตามด้วยชื่อไฟล์>
+
+git status
+git commit -m "Finish Phase X: [สรุปสิ่งที่แก้ไข]"
+git pull 
+git push origin ploy-backend
+```
+---
+
+## ⚠️ กรณีเจอ error: `rejected (fetch first)`
+
+- ให้ใช้ `git pull` ก่อน แล้วค่อย `git push` ใหม่
+- ถ้าไม่อยาก merge manual → ใช้ `git pull --rebase`
+
+---
+
+## กรณีต้องการล้าง branch ให้เหมือน develop (เช่นเตรียม branch ใหม่)
+
+```bash
+git checkout ploy-backend
+git fetch --all --prune
+git reset --hard origin/develop
+git push origin ploy-backend --force
+```
+> ใช้เมื่ออยากให้ branch `ploy-backend` เหมือน `develop` เป๊ะ  
+> ⚠️ `--force` จะเขียนทับประวัติเดิม ต้องแจ้งทีมก่อนใช้
+
+---
