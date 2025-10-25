@@ -176,6 +176,16 @@ EXIT;
 | sys                |
 +--------------------+
 ```
+ทดสอบ MySQL 'water'
+
+```sql
+SELECT * FROM categories WHERE name='Beverage';
+SELECT name FROM brands WHERE name IN ('Nestlé Pure Life','Malee COCO','Pokka','Coca-Cola','Fuji Cha');
+SELECT product_id, name FROM products WHERE product_id BETWEEN '#00021' AND '#00025';
+SELECT filename FROM product_images pi 
+JOIN products p ON p.id=pi.product_id_fk 
+WHERE p.product_id IN ('#00021','#00022','#00023','#00024','#00025');
+```
 
 ---
 
