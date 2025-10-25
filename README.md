@@ -186,7 +186,27 @@ SELECT filename FROM product_images pi
 JOIN products p ON p.id=pi.product_id_fk 
 WHERE p.product_id IN ('#00021','#00022','#00023','#00024','#00025');
 ```
+ดูเฉพาะชื่อสินค้าและคำอธิบาย (description)
+```sql
+SELECT product_id, name, description
+FROM products;
+```
+ตัวอย่างผลลัพธ์ ✅
 
+```
+```
+mysql> SELECT product_id, name, description
+    -> FROM products;
++------------+-------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| product_id | name                                                        | description                                                                              
+    |
++------------+-------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| #00001     | 100% Jasmine Rice 5 kg                                      | Premium Thai jasmine rice; new-crop harvest. Soft, fragrant grains in a 5 kg bag.            |
+| #00002     | Organic Brown Jasmine Rice 1 kg                             | High-fiber organic brown jasmine rice. Nutty aroma; 1 kg pack.                           
+    |
+| #00003     | SEAlect Fit Tuna Steak in Mineral Water 165 g               | Ready-to-eat tuna steak in mineral water; lean protein source.                           
+    |
+| #00004     | GOGI Crispy Frying Flour 500 g                              | Crispy tempura/frying mix for light, crunchy coating.                                    
 ---
 
 ### 🔹 6️⃣ สร้าง backend container ใหม่แบบไม่ใช้ cache
