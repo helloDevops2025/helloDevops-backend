@@ -16,10 +16,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    outputs:
-      TAG: ${{ steps.set_tag.outputs.TAG }}   # ✅ ส่งค่าออกไปให้ job ต่อไปใช้ได้
-      
+    runs-on: ubuntu-latest      
     steps:
       # 1️⃣ ดึงโค้ดจาก GitHub
       - name: Checkout repository
@@ -37,7 +34,12 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew clean build -x test
-
+  Docker:
+    runs-on: ubuntu-latest
+    outputs:
+      TAG: ${{ steps.set_tag.outputs.TAG }}   # ✅ ส่งค่าออกไปให้ job ต่อไปใช้ได้
+    needs : build
+    steps:
       - name: Set build tag
         id: set_tag
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV && echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
@@ -64,12 +66,6 @@ jobs:
         run: |
           docker stop backend-test || true
           docker rm backend-test || true
-  Docker:
-    runs-on: ubuntu-latest
-    needs : build
-    env:
-      TAG: ${{ needs.build.outputs.TAG }}   # ✅ ดึงค่าจาก job build
-    steps:
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -102,7 +98,8 @@ jobs:
   Deploy:
     runs-on: ubuntu-latest
     needs : Docker
-
+    env:
+      TAG: ${{ needs.build.outputs.TAG }}   # ✅ ดึงค่าจาก job build
     steps:
       # Update image to specific version (ถ้ามี tag เฉพาะ)
       - name: Update Deployment images
