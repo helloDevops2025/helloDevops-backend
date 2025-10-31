@@ -13,10 +13,12 @@ on:
 
   # ✅ 2. รันด้วยตนเองได้
   workflow_dispatch:
-
+  
 jobs:
   build:
-    runs-on: ubuntu-latest      
+    runs-on: ubuntu-latest  
+    outputs:
+      TAG: ${{ steps.set_tag.outputs.TAG }}   # ✅ ส่งค่าออกไปให้ job ต่อไปใช้ได้ 
     steps:
       # 1️⃣ ดึงโค้ดจาก GitHub
       - name: Checkout repository
@@ -34,16 +36,6 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew clean build -x test
-  Docker:
-    runs-on: ubuntu-latest
-    outputs:
-      TAG: ${{ steps.set_tag.outputs.TAG }}   # ✅ ส่งค่าออกไปให้ job ต่อไปใช้ได้
-    needs : build
-    steps:
-    
-      # ดึงโค้ดจาก GitHub
-      - name: Checkout repository
-        uses: actions/checkout@v4
         
       - name: Set build tag
         id: set_tag
@@ -102,7 +94,7 @@ jobs:
 
   Deploy:
     runs-on: ubuntu-latest
-    needs : Docker
+    needs : build
     env:
       TAG: ${{ needs.build.outputs.TAG }}   # ✅ ดึงค่าจาก job build
     steps:
