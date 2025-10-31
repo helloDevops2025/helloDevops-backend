@@ -36,10 +36,15 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean build -x test
 
+      - name: Set build tag
+        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       # 4️⃣ Build Docker image จาก Dockerfile โดยตรง
       - name: Build Docker image
         run: |
-          docker build -t hello-devops-backend:latest .
+          echo "🧱 Building image with tag: ${{ env.TAG }}"
+          docker build -t hello-devops-backend:${{ env.TAG }} .
+          docker tag hello-devops-backend:${{ env.TAG }} hello-devops-backend:latest
 
       # 5️⃣ ทดสอบรัน container (optional)
       - name: Run container for test
@@ -66,15 +71,11 @@ jobs:
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-          docker tag hello-devops-backend:latest ${DOCKER_USERNAME}/hello-devops-backend:latest
+          echo "🐳 Tagging and pushing images..."
+          docker tag hello-devops-backend:${{ env.TAG }} ${DOCKER_USERNAME}/hello-devops-backend:${{ env.TAG }}
+          docker tag hello-devops-backend:${{ env.TAG }} ${DOCKER_USERNAME}/hello-devops-backend:latest
+          docker push ${DOCKER_USERNAME}/hello-devops-backend:${{ env.TAG }}
           docker push ${DOCKER_USERNAME}/hello-devops-backend:latest
-      # - name: Login to Docker Hub
-      #   run: |
-      #     echo "dckr_pat_abcd1234xyz" | docker login -u "$u6687032" --password-stdin
-
-      # 🧱 Build and push backend
-      - name: Build and push backend image
-        run: |
-          docker build -t hello-devops-backend:latest .
-          docker tag hello-devops-backend:latest u6687032/hellodevops-backend:latest
-          docker push u6687032/hellodevops-backend:latest
+          echo "✅ Successfully pushed:"
+          echo "   ${DOCKER_USERNAME}/hello-devops-backend:${{ env.TAG }}"
+          echo "   ${DOCKER_USERNAME}/hello-devops-backend:latest"
