@@ -61,7 +61,10 @@ jobs:
         run: |
           docker stop backend-test || true
           docker rm backend-test || true
-
+  Docker:
+    runs-on: ubuntu-latest
+    needs : build
+    steps:
       # 7️⃣ (Optional) Push image ไป Docker Hub
       # ใช้ secrets ที่เก็บไว้ใน repo settings → Secrets → Actions
       - name: Push image to Docker Hub
@@ -80,11 +83,16 @@ jobs:
           echo "   ${DOCKER_USERNAME}/hello-devops-backend:${{ env.TAG }}"
           echo "   ${DOCKER_USERNAME}/hello-devops-backend:latest"
 
+  Deploy:
+    runs-on: ubuntu-latest
+    needs : Docker
+
+    steps:
       # Update image to specific version (ถ้ามี tag เฉพาะ)
       - name: Update Deployment images
         if: env.TAG != ''
         run: |
           echo "🔄 Updating deployments to tag: ${{ env.TAG }}"
-          kubectl set image deployment/frontend-deployment frontend=u6687032/hello-devops-frontend:${{ env.TAG }}
-          kubectl rollout status deployment/frontend-deployment
+          kubectl set image deployment/backend-deployment backend=u6687032/hello-devops-backend:${{ env.TAG }}
+          kubectl rollout status deployment/backend-deployment
 
