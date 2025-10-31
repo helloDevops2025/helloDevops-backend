@@ -96,13 +96,32 @@ jobs:
     runs-on: ubuntu-latest
     needs : build
     env:
-      TAG: ${{ needs.build.outputs.TAG }}   # ✅ ดึงค่าจาก job build
+      TAG: ${{ needs.build.outputs.TAG }}
+      PROJECT_ID: hellodevops-476816
+      CLUSTER_NAME: hello-devops-cluster
+      REGION: asia-northeast1
+      DEPLOYMENT_NAME: backend
+
     steps:
-      # Update image to specific version (ถ้ามี tag เฉพาะ)
+      # 1️⃣ Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+  
+      # 2️⃣ Get GKE credentials (เชื่อมต่อกับ cluster)
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+  
+      # 3️⃣ Update image
       - name: Update Deployment images
         if: env.TAG != ''
         run: |
-          echo "🔄 Updating deployments to tag: ${{ env.TAG }}"
-          kubectl set image deployment/backend-deployment backend=u6687032/hello-devops-backend:${{ env.TAG }}
-          kubectl rollout status deployment/backend-deployment
-
+          echo "🔄 Updating deployments to tag: ${TAG}"
+          kubectl set image deployment/${DEPLOYMENT_NAME} \
+            ${DEPLOYMENT_NAME}=u6687032/hello-devops-backend:${TAG}
+          kubectl rollout status deployment/${DEPLOYMENT_NAME}
