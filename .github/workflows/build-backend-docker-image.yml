@@ -40,6 +40,11 @@ jobs:
       TAG: ${{ steps.set_tag.outputs.TAG }}   # ✅ ส่งค่าออกไปให้ job ต่อไปใช้ได้
     needs : build
     steps:
+    
+      # ดึงโค้ดจาก GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Set build tag
         id: set_tag
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV && echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
