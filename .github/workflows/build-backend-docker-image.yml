@@ -116,7 +116,12 @@ jobs:
           cluster_name: ${{ env.CLUSTER_NAME }}
           location: ${{ env.REGION }}
           project_id: ${{ env.PROJECT_ID }}
-  
+          
+      - name: Clean up old backend pods before deploy
+        run: |
+          echo "🧹 Cleaning old backend pods..."
+          kubectl delete pods -l app=backend --ignore-not-found
+
       # 3️⃣ Update image
       - name: Update Deployment images
         if: env.TAG != ''
