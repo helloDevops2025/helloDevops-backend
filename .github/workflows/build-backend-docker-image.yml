@@ -117,16 +117,23 @@ jobs:
           location: ${{ env.REGION }}
           project_id: ${{ env.PROJECT_ID }}
           
+      # 🧹 ลบ pod เก่าก่อน (บังคับ)
       - name: 🧹 Clean up old backend pods
         run: |
-          echo "🧹 Cleaning old backend pods before deployment..."
-          kubectl delete pods -l app=backend --ignore-not-found --force --grace-period=0
-
-      # 3️⃣ Update image
-      - name: Update Deployment images
+          echo "🧹 Cleaning old backend pods..."
+          kubectl delete pods -l app=${{ env.DEPLOYMENT_NAME }} --ignore-not-found --force --grace-period=0
+  
+      # 🔄 อัปเดต image ใหม่
+      - name: 🔄 Update backend deployment
         if: env.TAG != ''
         run: |
-          echo "🔄 Updating deployments to tag: ${TAG}"
+          echo "🔄 Updating deployment ${DEPLOYMENT_NAME} to tag: ${TAG}"
           kubectl set image deployment/${DEPLOYMENT_NAME} \
             ${DEPLOYMENT_NAME}=u6687032/hello-devops-backend:${TAG}
-          kubectl rollout status deployment/${DEPLOYMENT_NAME}
+          kubectl rollout restart deployment/${DEPLOYMENT_NAME}
+          kubectl rollout status deployment/${DEPLOYMENT_NAME} --timeout=180s
+  
+      # ✅ ตรวจสอบผลหลัง deploy
+      - name: ✅ Verify backend pods
+        run: |
+          kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }} -o wide
