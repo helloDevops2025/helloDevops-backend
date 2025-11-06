@@ -53,6 +53,15 @@ public class OrderService {
         return orderRepo.save(savedOrder);
     }
 
+    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+        return orderItemRepo.findByOrderId(orderId);
+    }
+
+    public Optional<String> getBrandNameById(Long brandId) {
+        return brandRepo.findById(brandId).map(Brand::getName);
+    }
+
+
 
     // ✅ อัปเดต order
     public Order updateOrder(Order order) {

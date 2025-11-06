@@ -17,7 +17,7 @@ public class OrderController {
 
     @GetMapping("/test")
     public ResponseEntity<?> test() {
-        return ResponseEntity.ok(Map.of("status", "ok"));
+        return ResponseEntity.ok(Map.of("status", "ok  test"));
     }
 
     // ✅ GET: All orders
@@ -27,35 +27,41 @@ public class OrderController {
     }
 
     // ✅ GET: Order by ID (with DTO)
+// ✅ GET: Order by ID (with full details)
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
+    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
         Order order = orderService.getById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        List<OrderItemResponse> items = order.getOrderItems().stream()
-                .map(item -> new OrderItemResponse(
-                        item.getProductName(),
-                        item.getBrandName(),
-                        item.getQuantity(),
-                        item.getPriceEach(),
-                        item.getTotalPrice()
-                ))
-                .toList();
+        // ✅ ดึง orderItems ทั้งหมดจาก repository เพื่อให้แน่ใจว่าโหลดครบ
+        List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(id);
 
-        BigDecimal total = items.stream()
-                .map(OrderItemResponse::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // ✅ เติมชื่อแบรนด์จาก BrandRepository
+        for (OrderItem item : orderItems) {
+            if (item.getProduct() != null && item.getProduct().getBrandId() != null) {
+                orderService.getBrandNameById(item.getProduct().getBrandId())
+                        .ifPresent(item::setBrandName);
+            }
+        }
 
-        OrderResponse response = new OrderResponse(
-                order.getId(),
-                order.getCustomerName(),
-                order.getShippingMethod(),
-                total,
-                items
-        );
+        // ✅ รวมข้อมูลทั้งหมดเป็น Map (ไม่ใช้ DTO ตัดข้อมูลออก)
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", order.getId());
+        response.put("orderCode", order.getOrderCode());
+        response.put("customerName", order.getCustomerName());
+        response.put("customerPhone", order.getCustomerPhone());
+        response.put("shippingAddress", order.getShippingAddress());
+        response.put("paymentMethod", order.getPaymentMethod());
+        response.put("shippingMethod", order.getShippingMethod());
+        response.put("orderStatus", order.getOrderStatus());
+        response.put("createdAt", order.getCreatedAt());
+        response.put("updatedAt", order.getUpdatedAt());
+        response.put("orderItems", orderItems);
+        response.put("totalAmount", order.getTotalAmount());
 
         return ResponseEntity.ok(response);
     }
+
 
     // ✅ POST: Create order
     @PostMapping
