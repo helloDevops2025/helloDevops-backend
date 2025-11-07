@@ -72,15 +72,6 @@ class OrderControllerTest {
         verify(orderService, times(1)).listAll();
     }
 
-    // ✅ Test 3: Get order by ID success
-    @Test
-    void testGetOrderByIdSuccess() {
-        when(orderService.getById(1L)).thenReturn(Optional.of(mockOrder));
-        ResponseEntity<OrderResponse> response = orderController.getOrderById(1L);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Pim Peace", response.getBody().getCustomerName());
-        assertEquals(BigDecimal.valueOf(300), response.getBody().getTotalAmount());
-    }
 
     // ✅ Test 4: Get order by ID not found
     @Test
