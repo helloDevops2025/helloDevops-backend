@@ -29,6 +29,14 @@ public class Order {
     @JsonManagedReference
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // ✅ ใช้คู่กับ @JsonBackReference ใน OrderStatusHistory
+    private List<OrderStatusHistory> statusHistory = new ArrayList<>();
+
+    public List<OrderStatusHistory> getStatusHistory() { return statusHistory; }
+    public void setStatusHistory(List<OrderStatusHistory> statusHistory) { this.statusHistory = statusHistory; }
+
+
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
 

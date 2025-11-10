@@ -1,6 +1,7 @@
 package com.example.backend.order;
 
 import com.example.backend.product.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
@@ -82,6 +83,24 @@ public class OrderService {
 
     public void deleteOrder(Long id) {
         orderRepo.deleteById(id);
+    }
+
+    @Autowired
+    private OrderStatusHistoryRepository statusHistoryRepo;
+
+    // ✅ บันทึกการเปลี่ยนสถานะ
+    public void addStatusHistory(Order order, String status, String note) {
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatus(status);
+        history.setNote(note);
+        history.setChangedAt(new Date());
+        statusHistoryRepo.save(history);
+    }
+
+    // ✅ ดึงประวัติการเปลี่ยนสถานะ
+    public List<OrderStatusHistory> getStatusHistoryByOrderId(Long orderId) {
+        return statusHistoryRepo.findByOrderId(orderId);
     }
 
 }

@@ -36,6 +36,9 @@ public class OrderController {
         // ✅ ดึง orderItems ทั้งหมดจาก repository เพื่อให้แน่ใจว่าโหลดครบ
         List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(id);
 
+        // ✅ ดึงประวัติสถานะ
+        List<OrderStatusHistory> history = orderService.getStatusHistoryByOrderId(id);
+
         // ✅ เติมชื่อแบรนด์จาก BrandRepository
         for (OrderItem item : orderItems) {
             if (item.getProduct() != null && item.getProduct().getBrandId() != null) {
@@ -57,11 +60,11 @@ public class OrderController {
         response.put("createdAt", order.getCreatedAt());
         response.put("updatedAt", order.getUpdatedAt());
         response.put("orderItems", orderItems);
+        response.put("statusHistory", history);
         response.put("totalAmount", order.getTotalAmount());
 
         return ResponseEntity.ok(response);
     }
-
 
     // ✅ POST: Create order
     @PostMapping
@@ -70,16 +73,44 @@ public class OrderController {
         return ResponseEntity.ok(created);
     }
 
-    // ✅ PUT: Update order status
+    // ✅ PUT: Update order status + record in history
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String newStatus = body.get("status");
+        String note = body.getOrDefault("note", "");
+
         return orderService.getById(id).map(order -> {
-            String status = body.get("status");
-            order.setOrderStatus(status);
+            order.setOrderStatus(newStatus);
             orderService.updateOrder(order);
-            return ResponseEntity.ok(order);
-        }).orElse(ResponseEntity.notFound().build());
+            orderService.addStatusHistory(order, newStatus, note);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Order status updated successfully",
+                    "orderId", id,
+                    "newStatus", newStatus
+            ));
+        }).orElse(ResponseEntity.status(404).body(Map.of("error", "Order not found")));
     }
+
+    // ✅ GET: Status history for tracking
+    @GetMapping("/{id}/status-history")
+    public ResponseEntity<?> getStatusHistory(@PathVariable Long id) {
+        List<OrderStatusHistory> history = orderService.getStatusHistoryByOrderId(id);
+        return ResponseEntity.ok(history);
+    }
+
+
+//    // ✅ PUT: Update order status
+//    @PutMapping("/{id}/status")
+//    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+//        return orderService.getById(id).map(order -> {
+//            String status = body.get("status");
+//            order.setOrderStatus(status);
+//            orderService.updateOrder(order);
+//            return ResponseEntity.ok(order);
+//        }).orElse(ResponseEntity.notFound().build());
+//    }
+
     // ✅ DELETE: Delete order by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {
