@@ -4,6 +4,7 @@ import com.example.backend.order.dto.OrderItemResponse;
 import com.example.backend.order.dto.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -26,8 +27,7 @@ public class OrderController {
         return orderService.listAll();
     }
 
-    // ✅ GET: Order by ID (with DTO)
-// ✅ GET: Order by ID (with full details)
+    // ✅ GET: Order by ID (with full details)
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id) {
         Order order = orderService.getById(id)
@@ -47,6 +47,18 @@ public class OrderController {
             }
         }
 
+        // ====== totals ที่อ่านจาก entity ======
+        BigDecimal subtotal    = order.getSubtotal();
+        BigDecimal discountTot = order.getDiscountTotal();
+        BigDecimal shippingFee = order.getShippingFee();
+        BigDecimal grandTotal  = order.getGrandTotal();
+
+        // ถ้ามี grandTotal ให้ใช้เป็น totalAmount, ถ้าไม่มีใช้ subtotal จาก orderItems เดิม
+        BigDecimal totalAmount = (grandTotal != null)
+                ? grandTotal
+                : order.getTotalAmount();
+        // =======================================
+
         // ✅ รวมข้อมูลทั้งหมดเป็น Map (ไม่ใช้ DTO ตัดข้อมูลออก)
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", order.getId());
@@ -60,7 +72,6 @@ public class OrderController {
         response.put("createdAt", order.getCreatedAt());
         response.put("updatedAt", order.getUpdatedAt());
         response.put("orderItems", orderItems);
-        response.put("statusHistory", history);
         response.put("totalAmount", order.getTotalAmount());
 
         return ResponseEntity.ok(response);
@@ -82,35 +93,9 @@ public class OrderController {
         return orderService.getById(id).map(order -> {
             order.setOrderStatus(newStatus);
             orderService.updateOrder(order);
-            orderService.addStatusHistory(order, newStatus, note);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "Order status updated successfully",
-                    "orderId", id,
-                    "newStatus", newStatus
-            ));
-        }).orElse(ResponseEntity.status(404).body(Map.of("error", "Order not found")));
+            return ResponseEntity.ok(order);
+        }).orElse(ResponseEntity.notFound().build());
     }
-
-    // ✅ GET: Status history for tracking
-    @GetMapping("/{id}/status-history")
-    public ResponseEntity<?> getStatusHistory(@PathVariable Long id) {
-        List<OrderStatusHistory> history = orderService.getStatusHistoryByOrderId(id);
-        return ResponseEntity.ok(history);
-    }
-
-
-//    // ✅ PUT: Update order status
-//    @PutMapping("/{id}/status")
-//    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
-//        return orderService.getById(id).map(order -> {
-//            String status = body.get("status");
-//            order.setOrderStatus(status);
-//            orderService.updateOrder(order);
-//            return ResponseEntity.ok(order);
-//        }).orElse(ResponseEntity.notFound().build());
-//    }
-
     // ✅ DELETE: Delete order by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {

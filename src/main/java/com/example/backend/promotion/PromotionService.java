@@ -24,7 +24,6 @@ public class PromotionService {
     }
 
     // ---------- ค้นหา / ดึงโปร ----------
-
     public List<Promotion> search(String q, String status) {
         PromotionStatus st = null;
         if (status != null && !status.isBlank()) {
@@ -39,7 +38,6 @@ public class PromotionService {
     }
 
     // ---------- สร้างโปรใหม่ ----------
-
     @Transactional
     public Promotion create(Promotion p) {
         Promotion row = new Promotion();
@@ -68,7 +66,6 @@ public class PromotionService {
     }
 
     // ---------- แก้ไขโปรเดิม ----------
-
     @Transactional
     public Promotion update(Long id, Promotion patch) {
         Promotion p = getById(id);
@@ -97,16 +94,13 @@ public class PromotionService {
     }
 
     // ---------- จัดการความสัมพันธ์โปรโมชัน ↔ สินค้า ----------
-
     public List<Product> getProductsOfPromotion(Long promoId) {
         return promotionProductRepository.findProductsByPromotionId(promoId);
     }
 
     @Transactional
     public void attachProducts(Long promoId, List<Long> productIds) {
-        if (productIds == null || productIds.isEmpty()) {
-            return;
-        }
+        if (productIds == null || productIds.isEmpty()) return;
 
         Promotion promotion = getById(promoId);
         List<Product> products = productRepository.findAllById(productIds);
@@ -116,10 +110,7 @@ public class PromotionService {
             key.setPromotionId(promoId);
             key.setProductId(product.getId());
 
-            // กันไม่ให้ซ้ำ
-            if (promotionProductRepository.existsById(key)) {
-                continue;
-            }
+            if (promotionProductRepository.existsById(key)) continue;
 
             PromotionProduct pp = new PromotionProduct();
             pp.setId(key);

@@ -43,13 +43,13 @@ public class PromotionController {
         return promotionService.getById(id);
     }
 
-    // POST /api/promotions  (สร้างโปรใหม่)
+    // POST /api/promotions (สร้างโปรใหม่)
     @PostMapping
     public Promotion create(@RequestBody Promotion body) {
         return promotionService.create(body);
     }
 
-    // PUT /api/promotions/{id}  (แก้ไขโปรเดิม)
+    // PUT /api/promotions/{id} (แก้ไขโปรเดิม)
     @PutMapping("/{id}")
     public Promotion update(@PathVariable Long id, @RequestBody Promotion body) {
         return promotionService.update(id, body);
@@ -61,7 +61,7 @@ public class PromotionController {
         return promotionService.getProductsOfPromotion(id);
     }
 
-    // body: { "productIds": [1,2,3] }
+    // DTO สำหรับผูกสินค้าเข้ากับโปร
     public static class AttachProductsRequest {
         private List<Long> productIds;
 
@@ -74,7 +74,7 @@ public class PromotionController {
         }
     }
 
-    // POST /api/promotions/{id}/products  (ผูกสินค้าเข้ากับโปร)
+    // POST /api/promotions/{id}/products
     @PostMapping("/{id}/products")
     public ResponseEntity<?> attachProducts(
             @PathVariable Long id,
@@ -84,7 +84,7 @@ public class PromotionController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
-    // DELETE /api/promotions/{id}/products/{productId}  (ถอดสินค้าออกจากโปร)
+    // DELETE /api/promotions/{id}/products/{productId}
     @DeleteMapping("/{id}/products/{productId}")
     public ResponseEntity<?> detachProduct(
             @PathVariable Long id,
