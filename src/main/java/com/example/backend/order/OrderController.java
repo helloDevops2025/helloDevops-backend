@@ -4,6 +4,7 @@ import com.example.backend.order.dto.OrderItemResponse;
 import com.example.backend.order.dto.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -26,8 +27,7 @@ public class OrderController {
         return orderService.listAll();
     }
 
-    // ✅ GET: Order by ID (with DTO)
-// ✅ GET: Order by ID (with full details)
+    // ✅ GET: Order by ID (with full details)
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id) {
         Order order = orderService.getById(id)
@@ -44,6 +44,18 @@ public class OrderController {
             }
         }
 
+        // ====== totals ที่อ่านจาก entity ======
+        BigDecimal subtotal    = order.getSubtotal();
+        BigDecimal discountTot = order.getDiscountTotal();
+        BigDecimal shippingFee = order.getShippingFee();
+        BigDecimal grandTotal  = order.getGrandTotal();
+
+        // ถ้ามี grandTotal ให้ใช้เป็น totalAmount, ถ้าไม่มีใช้ subtotal จาก orderItems เดิม
+        BigDecimal totalAmount = (grandTotal != null)
+                ? grandTotal
+                : order.getTotalAmount();
+        // =======================================
+
         // ✅ รวมข้อมูลทั้งหมดเป็น Map (ไม่ใช้ DTO ตัดข้อมูลออก)
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", order.getId());
@@ -57,11 +69,23 @@ public class OrderController {
         response.put("createdAt", order.getCreatedAt());
         response.put("updatedAt", order.getUpdatedAt());
         response.put("orderItems", orderItems);
-        response.put("totalAmount", order.getTotalAmount());
+
+        // ✅ ส่ง subtotal / discount / shipping / grandTotal ให้ FE ใช้
+        response.put("subtotal", subtotal);
+        response.put("discount_total", discountTot);
+        response.put("discountTotal", discountTot);
+        // shipping ให้ทั้งแบบ fee + ชื่อที่ FE อ่าน
+        response.put("shipping_fee", shippingFee);
+        response.put("shippingCost", shippingFee);
+        // grand total
+        response.put("grand_total", grandTotal);
+        response.put("grandTotal", grandTotal);
+
+        // totalAmount ที่ FE อ่านอยู่
+        response.put("totalAmount", totalAmount);
 
         return ResponseEntity.ok(response);
     }
-
 
     // ✅ POST: Create order
     @PostMapping
@@ -80,6 +104,7 @@ public class OrderController {
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
     }
+
     // ✅ DELETE: Delete order by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {
