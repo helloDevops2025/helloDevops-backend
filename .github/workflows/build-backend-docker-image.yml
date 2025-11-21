@@ -13,6 +13,40 @@ on:
   workflow_dispatch:
   
 jobs:
+
+  test:
+      runs-on: ubuntu-latest
+      outputs:
+        TEST_PASSED: ${{ steps.set_test_status.outputs.TEST_PASSED }}
+  
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+  
+        - name: Set up JDK 21
+          uses: actions/setup-java@v4
+          with:
+            distribution: "temurin"
+            java-version: "21"
+  
+        - name: Run Unit Tests with Gradle
+          id: run-tests
+          run: |
+            chmod +x ./gradlew
+            ./gradlew clean test jacocoTestReport
+  
+        # ⬆️ ถ้ารันถึงตรงนี้แปลว่าการทดสอบผ่าน
+        - name: Set test status
+          id: set_test_status
+          run: echo "TEST_PASSED=true" >> $GITHUB_OUTPUT
+  
+        # 📦 เก็บ JaCoCo report เป็น Artifact
+        - name: Upload JaCoCo Report
+          uses: actions/upload-artifact@v4
+          with:
+            name: jacoco-report
+            path: build/reports/jacoco/test/html
+            
   build:
     runs-on: ubuntu-latest  
     outputs:
