@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -9,7 +10,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21) // ถ้า Docker ใช้ 17 ให้เปลี่ยนเป็น 17
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -18,26 +19,15 @@ repositories {
 }
 
 dependencies {
-    // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Security (ให้คลาส HttpSecurity, SecurityFilterChain, EnableWebSecurity)
     implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // ถ้าจะใช้ BCrypt ตรง ๆ ใน service
     implementation 'org.springframework.security:spring-security-crypto'
-
-    // JPA/Hibernate
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // MySQL driver (ถ้าใช้ MySQL)
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
-    // สำหรับ @DataJpaTest + H2
     testImplementation "org.mockito:mockito-inline:5.2.0"
-
     testRuntimeOnly 'com.h2database:h2:2.2.224'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -47,6 +37,15 @@ dependencies {
 
 }
 
-tasks.withType(Test).configureEach {
+tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }
