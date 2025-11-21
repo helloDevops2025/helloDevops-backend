@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - master
-      - main
+
   pull_request:
     branches:
       - master
-      - main
 
   # ✅ 2. รันด้วยตนเองได้
   workflow_dispatch:
@@ -97,9 +96,9 @@ jobs:
     env:
       TAG: ${{ needs.build.outputs.TAG }}
       PROJECT_ID: hellodevops-476816
-      CLUSTER_NAME: hello-devops-cluster
-      REGION: asia-northeast1
-      DEPLOYMENT_NAME: backend
+      CLUSTER_NAME: muict-hellodevops-cluster
+      REGION: asia-southeast1-b
+      DEPLOYMENT_NAME: hellodevops-be-deployment
 
     steps:
     
