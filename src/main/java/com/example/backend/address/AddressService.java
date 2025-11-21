@@ -1,12 +1,14 @@
 package com.example.backend.address;
 
-import com.example.backend.user.User;
-import com.example.backend.user.UserRepository;
-import com.example.backend.address.dto.AddressRequest;
-import com.example.backend.address.dto.AddressResponse;
-import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.example.backend.address.dto.AddressRequest;
+import com.example.backend.address.dto.AddressResponse;
+import com.example.backend.user.User;
+import com.example.backend.user.UserRepository;
 
 @Service
 public class AddressService {
@@ -52,10 +54,22 @@ public class AddressService {
         addressRepository.save(address);
         return AddressResponse.fromEntity(address);
     }
-
+    
     public AddressResponse updateAddress(Long id, AddressRequest request) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
+
+        // ถ้าขอให้เป็น DEFAULT ให้ reset ของเก่าก่อน (เหมือน addAddress)
+        if (request.getStatus() == AddressStatus.DEFAULT) {
+            Long userId = address.getUser().getId();
+            addressRepository.findByUserIdAndStatus(userId, AddressStatus.DEFAULT)
+                    .ifPresent(oldDefault -> {
+                        if (!oldDefault.getId().equals(address.getId())) {
+                            oldDefault.setStatus(AddressStatus.NON_DEFAULT);
+                            addressRepository.save(oldDefault);
+                        }
+                    });
+        }
 
         address.setName(request.getName());
         address.setPhoneNumber(request.getPhoneNumber());
@@ -65,13 +79,12 @@ public class AddressService {
         address.setDistrict(request.getDistrict());
         address.setProvince(request.getProvince());
         address.setZipcode(request.getZipcode());
-        // ถ้า request มี status ก็อัปเดตด้วย
         if (request.getStatus() != null) {
             address.setStatus(request.getStatus());
         }
-
         return AddressResponse.fromEntity(addressRepository.save(address));
-    }
+   }
+
 
     public void deleteAddress(Long id) {
         addressRepository.deleteById(id);
