@@ -131,7 +131,7 @@ jobs:
         run: |
           kubectl get pods -l app=${{ env.APP_LABEL }} -n hellodevopss-app -o wide
   
-        # ✅ ตรวจสอบผลหลัง deploy
-        - name: ✅ Verify backend pods
+        #  ตรวจสอบผลหลัง deploy
+      - name:  Verify backend pods
         run: |
           kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }} -o wide
