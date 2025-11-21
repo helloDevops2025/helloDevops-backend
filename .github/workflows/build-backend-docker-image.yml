@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - master
-
-  pull_request:
-    branches:
-      - master
+      - deployment-test
 
   # ✅ 2. รันด้วยตนเองได้
   workflow_dispatch:
