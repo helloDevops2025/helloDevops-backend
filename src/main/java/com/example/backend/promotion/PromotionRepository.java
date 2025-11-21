@@ -1,6 +1,7 @@
 package com.example.backend.promotion;
 
 import java.util.List;
+import java.util.Optional;   // <<<<<< ต้องมีอันนี้
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +21,7 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
             @Param("q") String q,
             @Param("status") PromotionStatus status
     );
+
+    // >>> อันนี้คือเมธอดที่ PromotionService เรียกใช้อยู่
+    Optional<Promotion> findFirstByCodeIgnoreCase(String code);
 }

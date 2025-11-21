@@ -93,4 +93,19 @@ public class PromotionController {
         promotionService.detachProduct(id, productId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/validate")
+    public ResponseEntity<PromotionValidateResponse> validatePromotion(
+            @RequestBody PromotionValidateRequest req
+    ) {
+        PromotionValidateResponse resp = promotionService.validatePromotion(req);
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/debug-validate")
+    public String debugValidate() {
+        return "validate-endpoint-loaded";
+        }
+
+
 }
