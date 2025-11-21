@@ -36,6 +36,9 @@ public class OrderController {
         // ✅ ดึง orderItems ทั้งหมดจาก repository เพื่อให้แน่ใจว่าโหลดครบ
         List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(id);
 
+        // ✅ ดึงประวัติสถานะ
+        List<OrderStatusHistory> history = orderService.getStatusHistoryByOrderId(id);
+
         // ✅ เติมชื่อแบรนด์จาก BrandRepository
         for (OrderItem item : orderItems) {
             if (item.getProduct() != null && item.getProduct().getBrandId() != null) {
@@ -69,20 +72,7 @@ public class OrderController {
         response.put("createdAt", order.getCreatedAt());
         response.put("updatedAt", order.getUpdatedAt());
         response.put("orderItems", orderItems);
-
-        // ✅ ส่ง subtotal / discount / shipping / grandTotal ให้ FE ใช้
-        response.put("subtotal", subtotal);
-        response.put("discount_total", discountTot);
-        response.put("discountTotal", discountTot);
-        // shipping ให้ทั้งแบบ fee + ชื่อที่ FE อ่าน
-        response.put("shipping_fee", shippingFee);
-        response.put("shippingCost", shippingFee);
-        // grand total
-        response.put("grand_total", grandTotal);
-        response.put("grandTotal", grandTotal);
-
-        // totalAmount ที่ FE อ่านอยู่
-        response.put("totalAmount", totalAmount);
+        response.put("totalAmount", order.getTotalAmount());
 
         return ResponseEntity.ok(response);
     }
@@ -94,17 +84,18 @@ public class OrderController {
         return ResponseEntity.ok(created);
     }
 
-    // ✅ PUT: Update order status
+    // ✅ PUT: Update order status + record in history
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String newStatus = body.get("status");
+        String note = body.getOrDefault("note", "");
+
         return orderService.getById(id).map(order -> {
-            String status = body.get("status");
-            order.setOrderStatus(status);
+            order.setOrderStatus(newStatus);
             orderService.updateOrder(order);
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
     }
-
     // ✅ DELETE: Delete order by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {

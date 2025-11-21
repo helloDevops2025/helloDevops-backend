@@ -1,6 +1,9 @@
 package com.example.backend.promotion;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class PromotionService {
     }
 
     // ---------- ค้นหา / ดึงโปร ----------
+
     public List<Promotion> search(String q, String status) {
         PromotionStatus st = null;
         if (status != null && !status.isBlank()) {
@@ -38,6 +42,7 @@ public class PromotionService {
     }
 
     // ---------- สร้างโปรใหม่ ----------
+
     @Transactional
     public Promotion create(Promotion p) {
         Promotion row = new Promotion();
@@ -66,6 +71,7 @@ public class PromotionService {
     }
 
     // ---------- แก้ไขโปรเดิม ----------
+
     @Transactional
     public Promotion update(Long id, Promotion patch) {
         Promotion p = getById(id);
@@ -94,6 +100,7 @@ public class PromotionService {
     }
 
     // ---------- จัดการความสัมพันธ์โปรโมชัน ↔ สินค้า ----------
+
     public List<Product> getProductsOfPromotion(Long promoId) {
         return promotionProductRepository.findProductsByPromotionId(promoId);
     }
@@ -124,5 +131,117 @@ public class PromotionService {
     @Transactional
     public void detachProduct(Long promoId, Long productId) {
         promotionProductRepository.deleteByPromotionIdAndProductId(promoId, productId);
+    }
+
+    // ---------- ใช้ตรวจโค้ดส่วนลดจากหน้า Cart / Checkout ----------
+
+    public PromotionValidateResponse validatePromotion(PromotionValidateRequest req) {
+        PromotionValidateResponse resp = new PromotionValidateResponse();
+
+        // 1) เช็คว่า user ใส่โค้ดมาหรือยัง
+        if (req == null || req.getCode() == null || req.getCode().isBlank()) {
+            resp.setValid(false);
+            resp.setMessage("กรุณาระบุโค้ดส่วนลด");
+            return resp;
+        }
+
+        // subtotal จาก request (ป้องกัน null)
+        BigDecimal subtotal = req.getCartSubtotal() != null
+                ? req.getCartSubtotal()
+                : BigDecimal.ZERO;
+
+        // 2) หาโปรโมชันจาก code
+        Optional<Promotion> optPromo =
+                promotionRepository.findFirstByCodeIgnoreCase(req.getCode().trim());
+
+        if (optPromo.isEmpty()) {
+            resp.setValid(false);
+            resp.setMessage("ไม่พบโค้ดส่วนลดนี้");
+            return resp;
+        }
+
+        Promotion promo = optPromo.get();
+
+        // 3) เช็คสถานะ active
+        if (promo.getStatus() != PromotionStatus.ACTIVE) {
+            resp.setValid(false);
+            resp.setMessage("โค้ดนี้ไม่สามารถใช้งานได้แล้ว");
+            return resp;
+        }
+
+        // 4) เช็ควันที่เริ่มต้น / วันที่หมดอายุ (ใช้ OffsetDateTime ให้ตรง type)
+        OffsetDateTime now = OffsetDateTime.now();
+        if (promo.getStartAt() != null && now.isBefore(promo.getStartAt())) {
+            resp.setValid(false);
+            resp.setMessage("โค้ดยังไม่เริ่มใช้งาน");
+            return resp;
+        }
+        if (promo.getEndAt() != null && now.isAfter(promo.getEndAt())) {
+            resp.setValid(false);
+            resp.setMessage("โค้ดหมดอายุแล้ว");
+            return resp;
+        }
+
+        // 5) เช็คขั้นต่ำ (min_order_amount)
+        BigDecimal minAmt = promo.getMinOrderAmount() != null
+                ? promo.getMinOrderAmount()
+                : BigDecimal.ZERO;
+
+        if (minAmt.compareTo(BigDecimal.ZERO) > 0 && subtotal.compareTo(minAmt) < 0) {
+            resp.setValid(false);
+            resp.setMessage("ยอดสั่งซื้อยังไม่ถึงขั้นต่ำสำหรับโค้ดนี้");
+            return resp;
+        }
+
+        // 6) เริ่มคำนวณส่วนลด
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        PromoType promoType = promo.getPromoType();
+
+        if (promoType == null) {
+            resp.setValid(false);
+            resp.setMessage("รูปแบบโปรโมชันไม่ถูกต้อง");
+            return resp;
+        }
+
+        if (promoType == PromoType.PERCENT_OFF) {
+            BigDecimal percent = promo.getPercentOff() != null
+                    ? promo.getPercentOff()
+                    : BigDecimal.ZERO;
+
+            discountAmount = subtotal
+                    .multiply(percent)
+                    .divide(BigDecimal.valueOf(100));
+
+        } else if (promoType == PromoType.AMOUNT_OFF) {
+            BigDecimal off = promo.getAmountOff() != null
+                    ? promo.getAmountOff()
+                    : BigDecimal.ZERO;
+
+            // กันไม่ให้ลดเกินยอดสินค้า
+            discountAmount = off.min(subtotal);
+        }
+        // TODO: BUY_X_GET_Y, FIXED_PRICE, SHIPPING_DISCOUNT ถ้ามีค่อยเพิ่มทีหลัง
+
+        // กันไม่ให้ติดลบ
+        BigDecimal finalAmount = subtotal.subtract(discountAmount);
+        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            finalAmount = BigDecimal.ZERO;
+        }
+
+        // 7) เซ็ตค่า response กลับไปให้ frontend
+        String typeStr = promoType.name(); // ส่งเป็น String เช่น "PERCENT_OFF"
+
+        resp.setValid(true);
+        resp.setDiscountType(typeStr);
+        resp.setDiscountValue(
+                promoType == PromoType.PERCENT_OFF
+                        ? (promo.getPercentOff() != null ? promo.getPercentOff() : BigDecimal.ZERO)
+                        : (promo.getAmountOff() != null ? promo.getAmountOff() : BigDecimal.ZERO)
+        );
+        resp.setDiscountAmount(discountAmount);
+        resp.setFinalAmount(finalAmount);
+        resp.setMessage("ใช้โค้ด " + promo.getCode() + " สำเร็จ");
+
+        return resp;
     }
 }

@@ -76,9 +76,7 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OrderItem> orderItems = new ArrayList<>();
-
     // ========== Convenience ==========
-
     /**
      * ใช้ให้ FE อ่านง่าย (เดิมมีแล้ว)
      * ถ้า grandTotal ถูกเซ็ตแล้ว ให้ใช้ grandTotal
