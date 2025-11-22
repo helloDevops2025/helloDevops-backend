@@ -1,7 +1,5 @@
 package com.example.backend.order;
 
-import com.example.backend.order.dto.OrderItemResponse;
-import com.example.backend.order.dto.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +12,10 @@ import java.util.*;
 public class OrderController {
 
     private final OrderService orderService;
-    public OrderController(OrderService orderService) { this.orderService = orderService; }
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
 
     @GetMapping("/test")
     public ResponseEntity<?> test() {
@@ -36,7 +37,7 @@ public class OrderController {
         // ✅ ดึง orderItems ทั้งหมดจาก repository เพื่อให้แน่ใจว่าโหลดครบ
         List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(id);
 
-        // ✅ ดึงประวัติสถานะ
+        // ✅ ดึงประวัติสถานะ (ยังไม่ใช้ฝั่ง FE แต่อาจใช้ต่อได้)
         List<OrderStatusHistory> history = orderService.getStatusHistoryByOrderId(id);
 
         // ✅ เติมชื่อแบรนด์จาก BrandRepository
@@ -47,19 +48,20 @@ public class OrderController {
             }
         }
 
-        // ====== totals ที่อ่านจาก entity ======
-        BigDecimal subtotal    = order.getSubtotal();
-        BigDecimal discountTot = order.getDiscountTotal();
-        BigDecimal shippingFee = order.getShippingFee();
-        BigDecimal grandTotal  = order.getGrandTotal();
+        // ====== totals ที่อ่านจาก entity + กัน null ======
+        BigDecimal subtotal    = order.getSubtotal()     != null ? order.getSubtotal()     : BigDecimal.ZERO;
+        BigDecimal discountTot = order.getDiscountTotal()!= null ? order.getDiscountTotal(): BigDecimal.ZERO;
+        BigDecimal shippingFee = order.getShippingFee()  != null ? order.getShippingFee()  : BigDecimal.ZERO;
+        BigDecimal taxTotal    = order.getTaxTotal()     != null ? order.getTaxTotal()     : BigDecimal.ZERO;
+        BigDecimal grandTotal  = order.getGrandTotal()   != null ? order.getGrandTotal()   : BigDecimal.ZERO;
 
-        // ถ้ามี grandTotal ให้ใช้เป็น totalAmount, ถ้าไม่มีใช้ subtotal จาก orderItems เดิม
-        BigDecimal totalAmount = (grandTotal != null)
+        // ถ้า grandTotal > 0 ให้ใช้เป็น totalAmount ถ้าไม่ → ใช้ getTotalAmount() (คำนวณ fallback)
+        BigDecimal totalAmount = (grandTotal.compareTo(BigDecimal.ZERO) > 0)
                 ? grandTotal
                 : order.getTotalAmount();
-        // =======================================
+        // ==================================================
 
-        // ✅ รวมข้อมูลทั้งหมดเป็น Map (ไม่ใช้ DTO ตัดข้อมูลออก)
+        // ✅ รวมข้อมูลทั้งหมดเป็น Map (ให้ FE ใช้ง่าย)
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", order.getId());
         response.put("orderCode", order.getOrderCode());
@@ -72,7 +74,17 @@ public class OrderController {
         response.put("createdAt", order.getCreatedAt());
         response.put("updatedAt", order.getUpdatedAt());
         response.put("orderItems", orderItems);
-        response.put("totalAmount", order.getTotalAmount());
+
+        // 🔥 สำคัญ: ตัวที่หน้า Tracking ใช้
+        response.put("subtotal", subtotal);
+        response.put("discountTotal", discountTot);
+        response.put("shippingFee", shippingFee);
+        response.put("taxTotal", taxTotal);
+        response.put("grandTotal", grandTotal);
+        response.put("totalAmount", totalAmount);
+
+        // จะส่ง history ไปด้วยหรือไม่ก็ได้ (ตอนนี้ FE ยังไม่ได้ใช้)
+        response.put("statusHistory", history);
 
         return ResponseEntity.ok(response);
     }
@@ -93,9 +105,12 @@ public class OrderController {
         return orderService.getById(id).map(order -> {
             order.setOrderStatus(newStatus);
             orderService.updateOrder(order);
+            // ถ้าจะบันทึก history ด้วย ก็เรียก addStatusHistory ตรงนี้ได้
+            // orderService.addStatusHistory(order, newStatus, note);
             return ResponseEntity.ok(order);
         }).orElse(ResponseEntity.notFound().build());
     }
+
     // ✅ DELETE: Delete order by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@PathVariable Long id) {
@@ -109,5 +124,4 @@ public class OrderController {
                 "error", "Order not found"
         )));
     }
-
 }
